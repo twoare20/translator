@@ -92,33 +92,38 @@
         }
     };
 
-    async function translate(originalText, tlCode, idx) {
-        let apiTl = tlCode.includes('-') && tlCode !== 'zh-TW' ? tlCode.split('-')[0] : tlCode;
-        try {
-            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${apiTl}&dt=t&q=${encodeURIComponent(originalText)}`);
-            const data = await res.json();
-            const translatedText = data[0][0][0];
+    async function translateAction(text, lang, idx) {
+    try {
+        const tl = lang.split('-')[0];
+        // 1. 번역 텍스트 가져오기
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`);
+        const data = await res.json();
+        const result = data[0][0][0];
 
-            const box = document.getElementById(`box${idx}`);
-            const line = document.createElement('div'); line.className = 'line'; line.innerText = translatedText;
-            box.appendChild(line);
-            if (box.children.length > 3) box.removeChild(box.firstChild);
+        document.getElementById(`box${idx}`).innerHTML = `<div class="line">${result}</div>`;
 
-            const now = new Date();
-            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const hlist = document.getElementById(`hlist${idx}`);
-            const hItem = document.createElement('div'); hItem.className = 'hist-item';
-            hItem.innerHTML = `<span class="hist-time">[${timeStr}]</span> <span class="hist-msg">${translatedText}</span> <span class="hist-ko">(${originalText})</span>`;
-            hlist.prepend(hItem);
+        // 2. 🔊 소리 재생 (404 방지 버전)
+        if (document.getElementById(`v${idx}`).checked) {
+            // 구글 TTS가 허용하는 가장 안정적인 주소 형식
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(result)}&tl=${tl}&client=tw-ob`;
+            
+            const audio = new Audio();
+            audio.src = ttsUrl;
+            
+            // 재생 시도
+            audio.play().catch(e => {
+                console.error("재생 실패 (클릭 필요):", e);
+            });
 
-            // 🔊 음성 출력 개선 (HTTPS 대응 및 에러 핸들링)
-            if (document.getElementById(`v${idx}`).checked) {
-                const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(translatedText)}&tl=${apiTl}&client=tw-ob`;
-                const audio = new Audio(ttsUrl);
-                audio.play().catch(e => console.log("자동 재생이 차단됨. 화면을 클릭하세요."));
-            }
-        } catch (e) {}
+            // 만약 여기서 404가 뜨는지 감시
+            audio.onerror = () => {
+                console.error("404 에러 발생: 구글 TTS 주소를 찾을 수 없음 -> ", ttsUrl);
+            };
+        }
+    } catch (e) {
+        console.error("번역 과정 에러:", e);
     }
+}
 
     const btn = document.getElementById('start-btn');
     btn.onclick = function() {
@@ -141,3 +146,4 @@
 </script>
 </body>
 </html>
+
