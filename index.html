@@ -81,26 +81,37 @@
 
     async function translate(text, lang, idx) {
         try {
-            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${lang.split('-')[0]}&dt=t&q=${encodeURIComponent(text)}`);
+            const tlCode = lang.split('-')[0];
+            // 1. 번역 API 호출
+            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${tlCode}&dt=t&q=${encodeURIComponent(text)}`);
             const data = await res.json();
             const result = data[0][0][0];
 
-            const box = document.getElementById(`box${idx}`);
-            const line = document.createElement('div'); line.className = 'line'; line.innerText = result;
-            box.appendChild(line);
-            if (box.children.length > 3) box.removeChild(box.firstChild);
+            // 2. 화면 표시 및 로그
+            document.getElementById(`box${idx}`).innerHTML += `<div class="line">${result}</div>`;
+            if (document.getElementById(`box${idx}`).children.length > 3) document.getElementById(`box${idx}`).removeChild(document.getElementById(`box${idx}`).firstChild);
+            
+            const hlist = document.getElementById(`hlist${idx}`);
+            const hItem = document.createElement('div');
+            hItem.style.borderBottom = "1px dotted #444";
+            hItem.innerText = `[${new Date().toLocaleTimeString()}] ${result}`;
+            hlist.prepend(hItem);
 
+            // 3. 🔊 진짜 구글 목소리 강제 재생 (백업 음성 제거)
             if (document.getElementById(`v${idx}`).checked) {
-                // 방법 1: 브라우저 내장 TTS
-                const utter = new SpeechSynthesisUtterance(result);
-                utter.lang = lang;
-                window.speechSynthesis.speak(utter);
+                // client=tw-ob는 구식이라 tts?ie=UTF-8 방식을 사용
+                const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(result)}&tl=${tlCode}&client=tw-ob&ttsspeed=1`;
+                const audio = new Audio(ttsUrl);
                 
-                // 방법 2: (백업) 구글 TTS - 위 방법이 실패할 경우 대비
-                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(result)}&tl=${lang.split('-')[0]}&client=tw-ob`);
-                audio.play().catch(() => {}); 
+                // 구글 목소리가 안정적으로 나오게 오디오 객체 설정
+                audio.playbackRate = 1.0; 
+                audio.play().catch(e => {
+                    console.log("구글 음성 재생 실패: 화면을 클릭했는지 확인하세요.");
+                });
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("오류 발생:", e);
+        }
     }
 
     const btn = document.getElementById('start-btn');
@@ -112,5 +123,6 @@
 </script>
 </body>
 </html>
+
 
 
