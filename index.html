@@ -93,17 +93,21 @@
     };
 
     async function translate(originalText, tlCode, idx) {
+        // 언어 코드 보정 (대만/싱가포르 등)
         let apiTl = tlCode.includes('-') && tlCode !== 'zh-TW' ? tlCode.split('-')[0] : tlCode;
+        
         try {
             const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${apiTl}&dt=t&q=${encodeURIComponent(originalText)}`);
             const data = await res.json();
             const translatedText = data[0][0][0];
 
+            // 1. 화면 자막 표시
             const box = document.getElementById(`box${idx}`);
             const line = document.createElement('div'); line.className = 'line'; line.innerText = translatedText;
             box.appendChild(line);
             if (box.children.length > 3) box.removeChild(box.firstChild);
 
+            // 2. 로그 기록
             const now = new Date();
             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
             const hlist = document.getElementById(`hlist${idx}`);
@@ -111,13 +115,16 @@
             hItem.innerHTML = `<span class="hist-time">[${timeStr}]</span> <span class="hist-msg">${translatedText}</span> <span class="hist-ko">(${originalText})</span>`;
             hlist.prepend(hItem);
 
-            // 🔊 음성 출력 개선 (HTTPS 대응 및 에러 핸들링)
+            // 3. 🔊 음성 출력 (브라우저 내장 Web Speech API 사용 - 가장 확실함)
             if (document.getElementById(`v${idx}`).checked) {
-                const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(translatedText)}&tl=${apiTl}&client=tw-ob`;
-                const audio = new Audio(ttsUrl);
-                audio.play().catch(e => console.log("자동 재생이 차단됨. 화면을 클릭하세요."));
+                const utterance = new SpeechSynthesisUtterance(translatedText);
+                utterance.lang = apiTl; // 해당 국가 언어로 설정
+                utterance.rate = 1.0;   // 속도
+                window.speechSynthesis.speak(utterance);
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("번역/음성 오류:", e);
+        }
     }
 
     const btn = document.getElementById('start-btn');
@@ -141,3 +148,4 @@
 </script>
 </body>
 </html>
+
