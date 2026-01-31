@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>UCKAM Lingo AI - Global Live</title>
     <style>
-        /* [기존 디자인 100% 복구] */
         body { 
             background-color: #121212; margin: 0; padding: 5px; 
             font-family: 'Malgun Gothic', sans-serif; 
@@ -31,7 +30,6 @@
         .hist-ko { color: #888; font-size: 0.75rem; margin-left: 4px; }
         .hist-msg { word-break: break-all; text-shadow: 1px 1px 2px #000; }
         #start-btn { background: #4285F4; color: white; border: none; padding: 8px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s; }
-        #start-btn:hover { transform: scale(1.05); }
         .btn-running { background: #ff4444 !important; }
         select { background: #333; color: white; border: 1px solid #555; width: 160px; font-size: 12px; padding: 3px; border-radius: 4px; }
     </style>
@@ -47,7 +45,7 @@
 
 <div class="container">
     <div class="lang-label">● KOREAN (LIVE)</div>
-    <div class="ko-box"><div id="ko-text" class="ko-text">방송 시작 버튼을 누르면 '삐-' 소리와 함께 시스템이 가동됩니다.</div></div>
+    <div class="ko-box"><div id="ko-text" class="ko-text">버튼을 누르면 '삐' 소리 후 시작됩니다.</div></div>
     <div class="lang-label" id="label1"></div><div id="box1" class="sub-box"></div>
     <div class="lang-label" id="label2"></div><div id="box2" class="sub-box"></div>
     <div class="lang-label" id="label3"></div><div id="box3" class="sub-box"></div>
@@ -60,7 +58,7 @@
 </div>
 
 <script>
-    const countryList = { 'en-SG': '🇸🇬 싱가포르 (영어)', 'zh-TW': '🇹🇼 대만 (중국어 번체)', 'tl': '🇵🇭 필리핀 (타갈로그어)', 'en': '🇺🇸 미국/영국 (영어)', 'ja': '🇯🇵 일본 (일본어)', 'vi': '🇻🇳 베트남 (베트남어)', 'th': '🇹🇭 태국 (태국어)', 'id': '🇮🇩 인도네시아 (인도네시아어)', 'zh-CN': '🇨🇳 중국 (중국어 간체)', 'fr': '🇫🇷 프랑스 (프랑스어)', 'de': '🇩🇪 독일 (독일어)', 'es': '🇪🇸 스페인 (스페인어)', 'it': '🇮🇹 이탈리아 (이탈리아어)', 'ru': '🇷🇺 러시아 (러시아어)', 'pt': '🇧🇷 브라질 (포르투갈어)', 'tr': '🇹🇷 터키 (터키어)', 'ar': '🇸🇦 사우디 (아랍어)', 'hi': '🇮🇳 인도 (힌디어)' };
+    const countryList = { 'en-SG': '🇸🇬 싱가포르 (영어)', 'zh-TW': '🇹🇼 대만 (중국어 번체)', 'tl': '🇵🇭 필리핀 (타갈로그어)', 'en': '🇺🇸 미국 (영어)', 'ja': '🇯🇵 일본 (일본어)', 'vi': '🇻🇳 베트남 (베트남어)', 'th': '🇹🇭 태국 (태국어)', 'id': '🇮🇩 인도네시아 (인도네시아어)', 'zh-CN': '🇨🇳 중국 (중국어 간체)' };
     const sortedKeys = Object.keys(countryList);
     [1, 2, 3].forEach(n => {
         const sel = document.getElementById(`l${n}`);
@@ -81,14 +79,14 @@
     updateLabels();
     document.querySelectorAll('select').forEach(s => s.onchange = updateLabels);
 
+    // 음성 인식 설정
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'ko-KR'; recognition.continuous = true; recognition.interimResults = true;
     let isStreaming = false;
 
-    // 🔊 소리 잠금 해제용 '삐' 소리 (Google 제공 알림음)
-    const startBeep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    // 🔊 보안 해제용 무음+삐 소리 데이터 (Tracking Prevention 회피)
+    const startBeep = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTdvT18AZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAD/f39/f39/f39/f39/f39/f39/f39/f39/');
 
-    recognition.onend = () => { if(isStreaming) try { recognition.start(); } catch(e) {} };
     recognition.onresult = async (event) => {
         let interim = ''; let final = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -99,6 +97,12 @@
         if (final) {
             document.getElementById('ko-text').innerText = final;
             for(let i=1; i<=3; i++) runTranslate(final, document.getElementById(`l${i}`).value, i);
+        }
+    };
+
+    recognition.onend = () => { 
+        if(isStreaming) {
+            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 300);
         }
     };
 
@@ -121,13 +125,13 @@
             hItem.innerHTML = `<span class="hist-time">[${timeStr}]</span> <span class="hist-msg">${translatedText}</span> <span class="hist-ko">(${originalText})</span>`;
             hlist.prepend(hItem);
 
+            // 음성 출력 (내장 고품질 엔진 사용으로 보안 통과)
             if (document.getElementById(`v${idx}`).checked) {
-                const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(translatedText)}&tl=${apiTl}&client=tw-ob`;
-                const audio = new Audio(ttsUrl);
-                audio.play().catch(e => {
-                    console.log("음소거 상태 확인 필요");
-                    document.getElementById('ko-text').innerText = "🔊 소리가 차단됨: 탭 우클릭 후 '음소거 해제'를 확인하세요!";
-                });
+                window.speechSynthesis.cancel(); // 겹침 방지
+                const utterance = new SpeechSynthesisUtterance(translatedText);
+                utterance.lang = apiTl;
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
             }
         } catch (e) {}
     }
@@ -135,15 +139,22 @@
     const btn = document.getElementById('start-btn');
     btn.onclick = function() {
         if(!isStreaming) { 
-            // [핵심] 클릭하는 순간 삐 소리를 내서 브라우저 보안을 뚫음
+            // 삐 소리 재생 후 '완전히 끝난 뒤' 음성 인식을 시작하도록 순서 조정
             startBeep.play().then(() => {
-                recognition.start(); 
                 isStreaming = true; 
                 btn.innerText = "🛑 방송 정지"; 
                 btn.classList.add('btn-running'); 
-                document.getElementById('ko-text').innerText = "시스템 가동 중... 말씀하세요.";
+                document.getElementById('ko-text').innerText = "마이크 준비 중...";
+                
+                // 소리와 마이크가 충돌하지 않게 0.5초 뒤 시작
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                        document.getElementById('ko-text').innerText = "가동 완료! 말씀하세요.";
+                    } catch(e) { console.error("인식 시작 실패", e); }
+                }, 500);
             }).catch(e => {
-                alert("탭이 음소거(알림차단) 상태입니다. 상단 탭을 우클릭해 해제해주세요!");
+                alert("탭이 음소거 상태입니다. 상단 탭 우클릭 후 '음소거 해제'를 해주세요!");
             });
         }
         else { 
@@ -151,6 +162,7 @@
             recognition.stop(); 
             btn.innerText = "🎙️ 방송 시작"; 
             btn.classList.remove('btn-running'); 
+            document.getElementById('ko-text').innerText = "방송이 종료되었습니다.";
         }
     };
     window.addEventListener('keydown', e => { if(e.key.toLowerCase() === 'h') document.getElementById('setup').classList.toggle('hidden'); });
