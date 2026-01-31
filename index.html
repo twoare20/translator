@@ -1,171 +1,173 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>UCKAM Lingo AI - Global Live</title>
-    <style>
-        body { 
-            background-color: #121212; margin: 0; padding: 5px; 
-            font-family: 'Malgun Gothic', sans-serif; 
-            height: 98vh; overflow: hidden; display: flex; flex-direction: column;
-            color: white;
-        }
-        .admin-panel { position: fixed; top: 0; left: 0; right: 0; display: flex; gap: 10px; background: rgba(0,0,0,0.9); padding: 12px; z-index: 1000; justify-content: center; border-bottom: 2px solid #4285F4; align-items: center; }
-        .hidden { display: none !important; }
-        .ch-set { display: flex; align-items: center; gap: 6px; background: #222; padding: 6px 12px; border-radius: 8px; color: white; font-size: 12px; border: 1px solid #444; }
-        .voice-label { display: flex; align-items: center; gap: 3px; cursor: pointer; color: #00FFCC; font-weight: bold; }
-        .container { display: flex; flex-direction: column; gap: 5px; padding-top: 120px; flex: 1; overflow: hidden; }
-        .ko-box, .sub-box { background: rgba(0,0,0,0.65); border-left: 5px solid #00FFCC; padding: 6px 15px; border-radius: 0 10px 10px 0; }
-        .sub-box { border-left-color: #4285F4; min-height: 85px; display: flex; flex-direction: column; justify-content: flex-end; }
-        .lang-label { color: #FFD700; font-size: 0.85rem; font-weight: bold; margin-bottom: 2px; text-shadow: 1px 1px 2px #000; }
-        .ko-text { color: #00FFCC; font-size: 1.1rem; font-weight: bold; }
-        .line { color: white; font-size: 1.3rem; font-weight: bold; text-shadow: 2px 2px 4px #000; margin: 1px 0; line-height: 1.1; }
-        .history-section { display: flex; gap: 8px; margin-top: 5px; background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 12px; flex: 1; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 5px; }
-        .hist-col { flex: 1; overflow-y: auto; font-size: 0.82rem; color: #eee; line-height: 1.5; padding: 10px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; }
-        .hist-col::-webkit-scrollbar { width: 4px; }
-        .hist-col::-webkit-scrollbar-thumb { background: rgba(66, 133, 244, 0.6); border-radius: 10px; }
-        .hist-title { color: #FFD700; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 3px; position: sticky; top: 0; background: rgba(30, 30, 30, 0.8); z-index: 10; }
-        .hist-item { border-bottom: 1px dotted rgba(255,255,255,0.1); padding: 5px 0; display: block; }
-        .hist-time { color: #aaa; font-size: 0.7rem; font-family: monospace; margin-right: 5px; }
-        .hist-ko { color: #888; font-size: 0.75rem; margin-left: 4px; }
-        .hist-msg { word-break: break-all; text-shadow: 1px 1px 2px #000; }
-        #start-btn { background: #4285F4; color: white; border: none; padding: 8px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s; }
-        .btn-running { background: #ff4444 !important; }
-        select { background: #333; color: white; border: 1px solid #555; width: 160px; font-size: 12px; padding: 3px; border-radius: 4px; }
-    </style>
+<meta charset="UTF-8">
+<title>UCKAM Lingo AI - Global Live</title>
+
+<style>
+body {
+    background-color: #121212;
+    margin: 0;
+    padding: 5px;
+    font-family: 'Malgun Gothic', sans-serif;
+    height: 98vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+.admin-panel {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    gap: 10px;
+    background: rgba(0,0,0,0.9);
+    padding: 12px;
+    z-index: 1000;
+    justify-content: center;
+    border-bottom: 2px solid #4285F4;
+}
+.hidden { display: none !important; }
+.ch-set {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #222;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+.voice-label {
+    color: #00FFCC;
+    font-weight: bold;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 120px;
+    flex: 1;
+    overflow: hidden;
+}
+.ko-box, .sub-box {
+    background: rgba(0,0,0,0.65);
+    border-left: 5px solid #00FFCC;
+    padding: 6px 15px;
+    border-radius: 0 10px 10px 0;
+}
+.sub-box { border-left-color: #4285F4; min-height: 80px; }
+.lang-label {
+    color: #FFD700;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+.ko-text { color: #00FFCC; font-size: 1.1rem; font-weight: bold; }
+.line { font-size: 1.3rem; font-weight: bold; }
+</style>
 </head>
+
 <body>
 
 <div id="setup" class="admin-panel">
-    <div class="ch-set"> 1번 국가 <select id="l1"></select> <label class="voice-label"><input type="checkbox" id="v1" checked> 음성</label> </div>
-    <div class="ch-set"> 2번 국가 <select id="l2"></select> <label class="voice-label"><input type="checkbox" id="v2" checked> 음성</label> </div>
-    <div class="ch-set"> 3번 국가 <select id="l3"></select> <label class="voice-label"><input type="checkbox" id="v3" checked> 음성</label> </div>
+    <div class="ch-set">1번 <select id="l1"></select> <label class="voice-label"><input id="v1" type="checkbox" checked> 음성</label></div>
+    <div class="ch-set">2번 <select id="l2"></select> <label class="voice-label"><input id="v2" type="checkbox" checked> 음성</label></div>
+    <div class="ch-set">3번 <select id="l3"></select> <label class="voice-label"><input id="v3" type="checkbox" checked> 음성</label></div>
     <button id="start-btn">🎙️ 방송 시작</button>
 </div>
 
 <div class="container">
     <div class="lang-label">● KOREAN (LIVE)</div>
-    <div class="ko-box"><div id="ko-text" class="ko-text">버튼을 누르면 '삐' 소리 후 시작됩니다.</div></div>
-    <div class="lang-label" id="label1"></div><div id="box1" class="sub-box"></div>
-    <div class="lang-label" id="label2"></div><div id="box2" class="sub-box"></div>
-    <div class="lang-label" id="label3"></div><div id="box3" class="sub-box"></div>
-    
-    <div class="history-section">
-        <div class="hist-col"><div class="hist-title" id="ht1">-</div><div id="hlist1"></div></div>
-        <div class="hist-col"><div class="hist-title" id="ht2">-</div><div id="hlist2"></div></div>
-        <div class="hist-col"><div class="hist-title" id="ht3">-</div><div id="hlist3"></div></div>
-    </div>
+    <div class="ko-box"><div id="ko-text" class="ko-text">대기 중</div></div>
+
+    <div class="lang-label" id="label1"></div>
+    <div id="box1" class="sub-box"></div>
+
+    <div class="lang-label" id="label2"></div>
+    <div id="box2" class="sub-box"></div>
+
+    <div class="lang-label" id="label3"></div>
+    <div id="box3" class="sub-box"></div>
 </div>
 
 <script>
-    const countryList = { 'en-SG': '🇸🇬 싱가포르 (영어)', 'zh-TW': '🇹🇼 대만 (중국어 번체)', 'tl': '🇵🇭 필리핀 (타갈로그어)', 'en': '🇺🇸 미국 (영어)', 'ja': '🇯🇵 일본 (일본어)', 'vi': '🇻🇳 베트남 (베트남어)', 'th': '🇹🇭 태국 (태국어)', 'id': '🇮🇩 인도네시아 (인도네시아어)', 'zh-CN': '🇨🇳 중국 (중국어 간체)' };
-    const sortedKeys = Object.keys(countryList);
-    [1, 2, 3].forEach(n => {
-        const sel = document.getElementById(`l${n}`);
-        sortedKeys.forEach(k => {
-            const opt = document.createElement('option'); opt.value = k; opt.innerText = countryList[k]; sel.appendChild(opt);
-        });
+const countryList = {
+    "en-SG": "🇸🇬 싱가포르 (영어)",
+    "zh-TW": "🇹🇼 대만 (중국어)",
+    "tl": "🇵🇭 필리핀 (타갈로그)",
+    "ja": "🇯🇵 일본",
+    "vi": "🇻🇳 베트남",
+    "th": "🇹🇭 태국",
+    "id": "🇮🇩 인도네시아"
+};
+
+[1,2,3].forEach(i=>{
+    const sel=document.getElementById("l"+i);
+    Object.keys(countryList).forEach(k=>{
+        const o=document.createElement("option");
+        o.value=k; o.textContent=countryList[k];
+        sel.appendChild(o);
     });
-    document.getElementById('l1').value = 'en-SG'; document.getElementById('l2').value = 'zh-TW'; document.getElementById('l3').value = 'tl';
-    
-    function updateLabels() { 
-        for(let i=1; i<=3; i++) {
-            const key = document.getElementById(`l${i}`).value;
-            const fullName = countryList[key];
-            document.getElementById(`label${i}`).innerText = fullName;
-            document.getElementById(`ht${i}`).innerText = fullName.split(' ')[1] + " LOG";
-        }
+});
+
+l1.value="en-SG"; l2.value="zh-TW"; l3.value="tl";
+
+function updateLabels(){
+    [1,2,3].forEach(i=>{
+        const k=document.getElementById("l"+i).value;
+        document.getElementById("label"+i).innerText=countryList[k];
+    });
+}
+updateLabels();
+document.querySelectorAll("select").forEach(s=>s.onchange=updateLabels);
+
+// 음성 인식
+const recognition = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+recognition.lang="ko-KR";
+recognition.continuous=true;
+recognition.interimResults=true;
+
+recognition.onresult = e => {
+    let final="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) final=e.results[i][0].transcript;
     }
-    updateLabels();
-    document.querySelectorAll('select').forEach(s => s.onchange = updateLabels);
-
-    // 음성 인식 설정
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'ko-KR'; recognition.continuous = true; recognition.interimResults = true;
-    let isStreaming = false;
-
-    // 🔊 보안 해제용 무음+삐 소리 데이터 (Tracking Prevention 회피)
-    const startBeep = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTdvT18AZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAD/f39/f39/f39/f39/f39/f39/f39/f39/');
-
-    recognition.onresult = async (event) => {
-        let interim = ''; let final = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) final = event.results[i][0].transcript.trim();
-            else interim += event.results[i][0].transcript;
-        }
-        if (interim) document.getElementById('ko-text').innerText = interim;
-        if (final) {
-            document.getElementById('ko-text').innerText = final;
-            for(let i=1; i<=3; i++) runTranslate(final, document.getElementById(`l${i}`).value, i);
-        }
-    };
-
-    recognition.onend = () => { 
-        if(isStreaming) {
-            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 300);
-        }
-    };
-
-    async function runTranslate(originalText, tlCode, idx) {
-        let apiTl = tlCode.includes('-') && tlCode !== 'zh-TW' ? tlCode.split('-')[0] : tlCode;
-        try {
-            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${apiTl}&dt=t&q=${encodeURIComponent(originalText)}`);
-            const data = await res.json();
-            const translatedText = data[0][0][0];
-
-            const box = document.getElementById(`box${idx}`);
-            const line = document.createElement('div'); line.className = 'line'; line.innerText = translatedText;
-            box.appendChild(line);
-            if (box.children.length > 3) box.removeChild(box.firstChild);
-
-            const now = new Date();
-            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const hlist = document.getElementById(`hlist${idx}`);
-            const hItem = document.createElement('div'); hItem.className = 'hist-item';
-            hItem.innerHTML = `<span class="hist-time">[${timeStr}]</span> <span class="hist-msg">${translatedText}</span> <span class="hist-ko">(${originalText})</span>`;
-            hlist.prepend(hItem);
-
-            // 음성 출력 (내장 고품질 엔진 사용으로 보안 통과)
-            if (document.getElementById(`v${idx}`).checked) {
-                window.speechSynthesis.cancel(); // 겹침 방지
-                const utterance = new SpeechSynthesisUtterance(translatedText);
-                utterance.lang = apiTl;
-                utterance.rate = 0.9;
-                window.speechSynthesis.speak(utterance);
-            }
-        } catch (e) {}
+    if(final){
+        ko-text.innerText=final;
+        [1,2,3].forEach(i=>{
+            runTranslate(final, document.getElementById("l"+i).value, i);
+        });
     }
+};
 
-    const btn = document.getElementById('start-btn');
-    btn.onclick = function() {
-        if(!isStreaming) { 
-            // 삐 소리 재생 후 '완전히 끝난 뒤' 음성 인식을 시작하도록 순서 조정
-            startBeep.play().then(() => {
-                isStreaming = true; 
-                btn.innerText = "🛑 방송 정지"; 
-                btn.classList.add('btn-running'); 
-                document.getElementById('ko-text').innerText = "마이크 준비 중...";
-                
-                // 소리와 마이크가 충돌하지 않게 0.5초 뒤 시작
-                setTimeout(() => {
-                    try {
-                        recognition.start();
-                        document.getElementById('ko-text').innerText = "가동 완료! 말씀하세요.";
-                    } catch(e) { console.error("인식 시작 실패", e); }
-                }, 500);
-            }).catch(e => {
-                alert("탭이 음소거 상태입니다. 상단 탭 우클릭 후 '음소거 해제'를 해주세요!");
-            });
-        }
-        else { 
-            isStreaming = false; 
-            recognition.stop(); 
-            btn.innerText = "🎙️ 방송 시작"; 
-            btn.classList.remove('btn-running'); 
-            document.getElementById('ko-text').innerText = "방송이 종료되었습니다.";
-        }
-    };
-    window.addEventListener('keydown', e => { if(e.key.toLowerCase() === 'h') document.getElementById('setup').classList.toggle('hidden'); });
+async function runTranslate(text, lang, idx){
+    const tl = lang.includes("-") ? lang.split("-")[0] : lang;
+    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`);
+    const d = await r.json();
+    const t = d[0][0][0];
+
+    const box=document.getElementById("box"+idx);
+    const div=document.createElement("div");
+    div.className="line";
+    div.innerText=t;
+    box.innerHTML="";
+    box.appendChild(div);
+
+    if(document.getElementById("v"+idx).checked){
+        fetch("http://127.0.0.1:8123/tts",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({ text:t, lang:lang })
+        });
+    }
+}
+
+start-btn.onclick=()=>{
+    recognition.start();
+    ko-text.innerText="말씀하세요";
+};
 </script>
+
 </body>
 </html>
+
+
