@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>UCKAM Lingo AI - Global Live</title>
     <style>
-        /* [기존 디자인 복구] */
+        /* [기존 디자인 100% 복구] */
         body { 
             background-color: #121212; margin: 0; padding: 5px; 
             font-family: 'Malgun Gothic', sans-serif; 
@@ -30,34 +30,13 @@
         .hist-time { color: #aaa; font-size: 0.7rem; font-family: monospace; margin-right: 5px; }
         .hist-ko { color: #888; font-size: 0.75rem; margin-left: 4px; }
         .hist-msg { word-break: break-all; text-shadow: 1px 1px 2px #000; }
-        #start-btn { background: #4285F4; color: white; border: none; padding: 8px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        #start-btn { background: #4285F4; color: white; border: none; padding: 8px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s; }
+        #start-btn:hover { transform: scale(1.05); }
         .btn-running { background: #ff4444 !important; }
         select { background: #333; color: white; border: 1px solid #555; width: 160px; font-size: 12px; padding: 3px; border-radius: 4px; }
-
-        /* [추가] 영상 인트로 레이어 */
-        #video-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 10000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        #intro-video { max-width: 900px; width: 85%; border-radius: 15px; box-shadow: 0 0 30px rgba(66,133,244,0.3); }
-        #unlock-btn {
-            margin-top: 30px; padding: 18px 60px; font-size: 22px; font-weight: bold;
-            color: white; background: linear-gradient(45deg, #4285F4, #34A853);
-            border: none; border-radius: 50px; cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3); transition: 0.3s;
-        }
-        #unlock-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
     </style>
 </head>
 <body>
-
-<div id="video-layer">
-    <video id="intro-video" autoplay muted loop>
-        <source src="intro.mp4" type="video/mp4">
-    </video>
-    <button id="unlock-btn" onclick="initAudio()">🚀 시스템 시작 (소리 활성화)</button>
-</div>
 
 <div id="setup" class="admin-panel">
     <div class="ch-set"> 1번 국가 <select id="l1"></select> <label class="voice-label"><input type="checkbox" id="v1" checked> 음성</label> </div>
@@ -68,10 +47,11 @@
 
 <div class="container">
     <div class="lang-label">● KOREAN (LIVE)</div>
-    <div class="ko-box"><div id="ko-text" class="ko-text">방송 시작 버튼을 누르세요.</div></div>
+    <div class="ko-box"><div id="ko-text" class="ko-text">방송 시작 버튼을 누르면 '삐-' 소리와 함께 시스템이 가동됩니다.</div></div>
     <div class="lang-label" id="label1"></div><div id="box1" class="sub-box"></div>
     <div class="lang-label" id="label2"></div><div id="box2" class="sub-box"></div>
     <div class="lang-label" id="label3"></div><div id="box3" class="sub-box"></div>
+    
     <div class="history-section">
         <div class="hist-col"><div class="hist-title" id="ht1">-</div><div id="hlist1"></div></div>
         <div class="hist-col"><div class="hist-title" id="ht2">-</div><div id="hlist2"></div></div>
@@ -101,19 +81,12 @@
     updateLabels();
     document.querySelectorAll('select').forEach(s => s.onchange = updateLabels);
 
-    // 🔊 [핵심] 오디오 활성화 및 레이어 닫기
-    function initAudio() {
-        const silent = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-        silent.play().then(() => {
-            document.getElementById('video-layer').style.display = 'none';
-            document.getElementById('intro-video').pause();
-            console.log("Audio Unlocked!");
-        });
-    }
-
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'ko-KR'; recognition.continuous = true; recognition.interimResults = true;
     let isStreaming = false;
+
+    // 🔊 소리 잠금 해제용 '삐' 소리 (Google 제공 알림음)
+    const startBeep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
 
     recognition.onend = () => { if(isStreaming) try { recognition.start(); } catch(e) {} };
     recognition.onresult = async (event) => {
@@ -129,7 +102,6 @@
         }
     };
 
-    // [함수 이름 수정] 사진 에러 해결 (translate -> runTranslate)
     async function runTranslate(originalText, tlCode, idx) {
         let apiTl = tlCode.includes('-') && tlCode !== 'zh-TW' ? tlCode.split('-')[0] : tlCode;
         try {
@@ -152,7 +124,10 @@
             if (document.getElementById(`v${idx}`).checked) {
                 const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(translatedText)}&tl=${apiTl}&client=tw-ob`;
                 const audio = new Audio(ttsUrl);
-                audio.play();
+                audio.play().catch(e => {
+                    console.log("음소거 상태 확인 필요");
+                    document.getElementById('ko-text').innerText = "🔊 소리가 차단됨: 탭 우클릭 후 '음소거 해제'를 확인하세요!";
+                });
             }
         } catch (e) {}
     }
@@ -160,12 +135,16 @@
     const btn = document.getElementById('start-btn');
     btn.onclick = function() {
         if(!isStreaming) { 
-            try { 
+            // [핵심] 클릭하는 순간 삐 소리를 내서 브라우저 보안을 뚫음
+            startBeep.play().then(() => {
                 recognition.start(); 
                 isStreaming = true; 
                 btn.innerText = "🛑 방송 정지"; 
                 btn.classList.add('btn-running'); 
-            } catch(e) {} 
+                document.getElementById('ko-text').innerText = "시스템 가동 중... 말씀하세요.";
+            }).catch(e => {
+                alert("탭이 음소거(알림차단) 상태입니다. 상단 탭을 우클릭해 해제해주세요!");
+            });
         }
         else { 
             isStreaming = false; 
